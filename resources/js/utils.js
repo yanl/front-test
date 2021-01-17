@@ -78,7 +78,7 @@ var utils = (function(parent, utils) {
     /**
      * Take an array of objects of similar structure and convert it to a CSV.
      * @source     https://halistechnology.com/2015/05/28/use-javascript-to-export-your-data-as-csv/
-     * @modifiedBy sators
+     * @modifiedBy sators, yanl
      * @param      {Array}  options.data            Array of data
      * @param      {String} options.columnDelimiter Column separator, defaults to ","
      * @param      {String} options.lineDelimiter   Line break, defaults to "\n"
@@ -144,10 +144,3 @@ var utils = (function(parent, utils) {
 
     return self;
 })(utils || {});
-function delay(fn, ms) {
-    let timer = 0
-    return function(...args) {
-      clearTimeout(timer)
-      timer = setTimeout(fn.bind(this, ...args), ms || 0)
-    }
-  }

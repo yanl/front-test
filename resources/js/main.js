@@ -2,11 +2,9 @@
 /*
  * todo
  * refactor the getPost, getPostDetails, getComments in a generic function with params ?
- * submit post + validation
  * confirm delete
  * handle failure
  * rework posts/filteredPosts ?
- * security, sanitize inputs & json check for xss
  * local storage if time
  * styling
  * hide comments
@@ -20,13 +18,18 @@ var main = (function(parent, auth, utils) {
     const self = (parent = parent || {});
     const doc = document;
     const conf = {
-        provider: 'https://jsonplaceholder.typicode.com/'
+        provider: 'https://jsonplaceholder.typicode.com/',
+        maxPostBodyLength: 400
     };
-    // dom elements used
+
+    // store dom elements used in the app
     const elems = {
         searchCount: doc.getElementById('search-count'),
         posts: doc.getElementById('posts'),
-        newPost: doc.getElementById('new-post-modal')
+        newPost: doc.getElementById('new-post-modal'),
+        newPostTitle: doc.getElementById('new-post-title'),
+        newPostBody: doc.getElementById('new-post-body'),
+        newPostCharCount: doc.getElementById('new-post-char-count'),
     };
     const state = {
         sortingAsc: true,
@@ -40,6 +43,8 @@ var main = (function(parent, auth, utils) {
     const init = function() {
         console.log('init');
         get();
+        renderNewPostCharCount();
+        elems.newPostBody.setAttribute('maxlength', conf.maxPostBodyLength);
     };
 
     const setViewList = function() {
@@ -54,13 +59,12 @@ var main = (function(parent, auth, utils) {
         renderPosts(filteredPosts);
     };
 
-    // todo sanitize inputs
     const get = function() {
         const url = `${conf.provider}posts`;
         try {
             fetch(url)
             .then(response => response.json())
-            .then(function(json) {
+            .then(json => {
                 filteredPosts = posts = json;
                 
                 renderPosts(posts);
@@ -78,13 +82,11 @@ var main = (function(parent, auth, utils) {
                 method: 'DELETE'
             })
             .then(response => response.json())
-            .then(function(json) {
+            .then(json => {
                 console.log('delete resp', json);
-                //filteredPosts = posts = json;
                 filteredPosts = filteredPosts.filter(function(post) {
                     return post.id != id;
                 });
-                updatePostCount();
                 renderPosts(filteredPosts);
             });
         } catch (error) {
@@ -104,10 +106,9 @@ var main = (function(parent, auth, utils) {
                 body: JSON.stringify(post)
             })
             .then(response => response.json())
-            .then(function(json) {
+            .then(json => {
                 posts.push(json);
                 filteredPosts.push(json);
-                updatePostCount();
                 renderPosts(filteredPosts);
                 utils.toggleLoading(doc.getElementById('new-post-send'));
                 bootstrap.Modal.getInstance(elems.newPost).hide();
@@ -149,7 +150,6 @@ var main = (function(parent, auth, utils) {
             fetch(url)
             .then(response => response.json())
             .then(function(json) {
-                
                 setTimeout(() => {
                     renderPostComments(postID, json);
                     utils.toggleLoading(el);
@@ -176,21 +176,28 @@ var main = (function(parent, auth, utils) {
 
     const searchPosts = function(searchTerm) {
         console.log('searching ...');
-        filteredPosts = posts.filter(function(post) {
+        filteredPosts = posts.filter(post => {
             return post.body.indexOf(searchTerm) > -1;
         });
-        
-        updatePostCount();
             
         renderPosts(filteredPosts);
     };
 
-    const updatePostCount = function() {
+
+    // renderers, dom manipulation etc.
+    const renderPostCount = function() {
         utils.removeChildren(elems.searchCount);
         elems.searchCount.appendChild(doc.createTextNode(filteredPosts.length));
     };
 
+    const renderNewPostCharCount = function() {
+        const charLeft = conf.maxPostBodyLength - elems.newPostBody.value.length;
+        utils.removeChildren(elems.newPostCharCount);
+        elems.newPostCharCount.appendChild(doc.createTextNode(charLeft));
+    };
+
     const renderPosts = function(postsData) {
+        renderPostCount();
         const fragment = doc.createDocumentFragment();
         for (const postData of postsData) {
             const postElem = getPostFragment(postData);
@@ -288,11 +295,11 @@ var main = (function(parent, auth, utils) {
 
             return;
         }
-        const postsToExport = filteredPosts.filter(function(post) {
+        const postsToExport = filteredPosts.filter(post => {
             return selectedIDs.includes(post.id);
         });
         const csv = utils.arrayToCsv(postsToExport);
-        var file = new File([csv], "posts.csv", {type: "text/csv;charset=utf-8"});
+        var file = new File([csv], 'posts.csv', {type: 'text/csv;charset=utf-8'});
         saveAs(file);
     };
 
@@ -310,6 +317,27 @@ var main = (function(parent, auth, utils) {
             del(id);
         });
     };
+    
+    const validatePost = function() {
+        let valid = true;
+        elems.newPostTitle.classList.remove('error');
+        elems.newPostBody.classList.remove('error');
+        if (!elems.newPostTitle.value) {
+            elems.newPostTitle.classList.add('error');
+            valid = false;
+        }
+        if (!elems.newPostBody.value) {
+            elems.newPostBody.classList.add('error');
+            valid = false;
+        }
+        if (elems.newPostBody.value.length > 500) {
+            elems.newPostBody.classList.add('error');
+            valid = false;
+        }
+
+        return valid;
+    };
+
 
     // event listeners
     doc.getElementById('search').addEventListener('keyup', function(e) {
@@ -334,6 +362,8 @@ var main = (function(parent, auth, utils) {
         deletePosts();
     }, false);
     doc.getElementById('new-post-send').addEventListener('click', function() {
+        if (!validatePost()) return;
+
         utils.toggleLoading(this);
         const title = utils.sanitize(doc.getElementById('new-post-title').value);
         const body = utils.sanitize(doc.getElementById('new-post-body').value);
@@ -345,21 +375,7 @@ var main = (function(parent, auth, utils) {
         set(post);
 
     }, false);
-    elems.newPost.addEventListener('show.bs.modal', function (event) {
-        // // Button that triggered the modal
-        // var button = event.relatedTarget;
-        // // Extract info from data-bs-* attributes
-        // var recipient = button.getAttribute('data-bs-whatever');
-        // // If necessary, you could initiate an AJAX request here
-        // // and then do the updating in a callback.
-        // //
-        // // Update the modal's content.
-        // var modalTitle = exampleModal.querySelector('.modal-title');
-        // var modalBodyInput = exampleModal.querySelector('.modal-body input');
-
-        // modalTitle.textContent = 'New message to ' + recipient;
-        // modalBodyInput.value = recipient;
-    });
+    doc.getElementById('new-post-body').addEventListener('keyup', renderNewPostCharCount, false);
     doc.body.addEventListener("click", function (e) {
         if (!e.target) return;
         

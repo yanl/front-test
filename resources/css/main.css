@@ -15,3 +15,4 @@
 } */
 .post label {display: block; cursor: pointer;}
 .post h3 {text-transform: capitalize;}
+.error {border: 1px solid red !important;}

@@ -64,7 +64,7 @@
                         (<em id="search-count">100</em> found)
                     </span>
                     <form class="d-flex align-items-end">
-                        <input id="search" class="form-control me-2" type="search" placeholder="Search"
+                        <input id="search" class="form-control me-2" type="search" placeholder="Search" autocomplete="off"
                             aria-label="Search">
                         <button class="btn btn-outline-success d-none" type="submit">Search</button>
                     </form>
@@ -84,11 +84,12 @@
                         <form>
                             <div class="mb-3">
                                 <label for="new-post-title" class="col-form-label">Title:</label>
-                                <input type="text" class="form-control" id="new-post-title">
+                                <input type="text" class="form-control" id="new-post-title" required>
                             </div>
                             <div class="mb-3">
                                 <label for="new-post-body" class="col-form-label">Message:</label>
-                                <textarea class="form-control" id="new-post-body"></textarea>
+                                <textarea class="form-control" id="new-post-body" required maxlength=""></textarea>
+                                <div class="text-end"><em id="new-post-char-count"></em> characters left</div>
                             </div>
                         </form>
                     </div>

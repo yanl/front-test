@@ -1,0 +1,16 @@
+# Ignore Configurations #
+*.ini
+
+#Ignore Cache#
+*.cache
+
+/app/config/*
+/node_modules
+/package.json
+/package-lock.json
+/.eslintrc.json
+/.eslintrc.js
+/Resources/cache/*
+.history/*
+.htaccess
+.vscode/
