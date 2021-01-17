@@ -1,0 +1,17 @@
+/* #posts {
+    overflow-y: auto;
+    height: 100vh;
+} */
+#header-nav {
+    padding: 0;
+}
+#main-nav {
+    display: sticky;
+}
+/* .post {
+    max-height: 1000px;
+    transition: max-height 0.15s ease-out;
+    transition: max-height 0.15s ease-out;
+} */
+.post label {display: block; cursor: pointer;}
+.post h3 {text-transform: capitalize;}
